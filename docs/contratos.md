@@ -18,7 +18,7 @@ classDiagram
         +address vara
         +ControleAcesso controleAcesso
         +mapping(bytes32 => Documento) documentos
-        +registrarDocumento(bytes32 docId, bytes32 hashDocumento, string tipoDocumento, string orgaoEmissor, uint256 validoAte) void
+        +registrarDocumento(bytes32 docId, bytes32 hashDocumento, string tipoDocumento, string orgaoEmissor, string autoridadeSignataria, bytes32 hashAssinatura, uint256 validoAte) void
         +documentoExiste(bytes32 docId) bool
         +verificarDocumento(bytes32 docId) DocumentoView
         +revogarDocumento(bytes32 docId) void
@@ -30,6 +30,8 @@ classDiagram
         +bytes32 hashDocumento
         +string tipoDocumento
         +string orgaoEmissor
+        +string autoridadeSignataria
+        +bytes32 hashAssinatura
         +uint256 emitidoEm
         +uint256 validoAte
         +StatusDocumento status
