@@ -7,22 +7,36 @@ forge build
 
 echo "[2/3] Copiando ABI compilada para o Backend..."
 mkdir -p backend/abi
-cp out/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
+cp artifacts/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
 
 echo "[3/3] Realizando Deploy no nó Anvil local..."
-DEPLOY_OUTPUT=$(forge create contracts/ControleAcesso.sol:ControleAcesso \
+CONTROLE_ACESSO_OUTPUT=$(forge create contracts/ControleAcesso.sol:ControleAcesso \
   --rpc-url http://127.0.0.1:8545 \
   --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
   --broadcast)
 
-# Extrai o endereço 'Deployed to:' retornado pelo Forge
-CONTRACT_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "Deployed to:" | awk '{print $3}')
+# Extrai o endereço "Deployed to:" retornado pelo Forge.
+CONTROLE_ACESSO_ADDRESS=$(echo "$CONTROLE_ACESSO_OUTPUT" | grep "Deployed to:" | awk '{print $3}' | tail -n 1)
 
-echo "ENDERECO_CONTROLE_ACESSO=$CONTRACT_ADDRESS" > backend/.env
+REGISTRO_DOCUMENTOS_OUTPUT=$(forge create contracts/RegistroDocumentos.sol:RegistroDocumentos \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast \
+  --constructor-args "$CONTROLE_ACESSO_ADDRESS")
+
+REGISTRO_DOCUMENTOS_ADDRESS=$(echo "$REGISTRO_DOCUMENTOS_OUTPUT" | grep "Deployed to:" | awk '{print $3}' | tail -n 1)
+
+printf '%s\n' \
+  "ENDERECO_CONTROLE_ACESSO=$CONTROLE_ACESSO_ADDRESS" \
+  "ENDERECO_REGISTRO_DOCUMENTOS=$REGISTRO_DOCUMENTOS_ADDRESS" \
+  "BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545" \
+  "CHAVE_PRIVADA_ADMIN=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
+  > backend/.env
 
 echo ""
 echo "==============================================================="
 echo "✅ Contrato implantado com sucesso!"
-echo "📍 Endereço gravado automaticamente no arquivo .env:"
-echo "   ENDERECO_CONTROLE_ACESSO=$CONTRACT_ADDRESS"
+echo "📍 Endereços gravados automaticamente no arquivo .env:"
+echo "   ENDERECO_CONTROLE_ACESSO=$CONTROLE_ACESSO_ADDRESS"
+echo "   ENDERECO_REGISTRO_DOCUMENTOS=$REGISTRO_DOCUMENTOS_ADDRESS"
 echo "==============================================================="
