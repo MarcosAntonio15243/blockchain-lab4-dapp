@@ -162,12 +162,13 @@ def substituir_documento(
 @router.get("/{doc_id}/validar", response_model=ResultadoValidacaoResponse)
 def validar_documento(
     doc_id: str,
-    perfil: PerfilConsulente = Query(...),
     service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
     endereco_autenticado: str = Depends(obter_endereco_autenticado),
+    controle_acesso: ControleAcessoService = Depends(get_controle_acesso_service),
 ):
     try:
-        return service.validar(doc_id, perfil)
+        perfil_real = controle_acesso.consultar_perfil(endereco_autenticado)
+        return service.validar(doc_id, perfil_real)
     except KeyError:
         return {"existe": False}
     except Exception as erro:
