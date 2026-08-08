@@ -31,7 +31,9 @@ class ControleAcessoService:
         comprovante = self.w3.eth.wait_for_transaction_receipt(transacao_hash)
         return comprovante.transactionHash.hex()
 
-    def consultar_perfil(self, conta: str) -> int:
-        conta_checksum = Web3.to_checksum_address(conta)
-        return self.contrato.functions.perfis(conta_checksum).call()
+    def consultar_perfil(self, conta: str) -> PerfilOnChain:
+        perfil_bruto = self.contract.functions.perfilDe(
+            self.w3.to_checksum_address(conta)
+        ).call()
+        return PerfilOnChain(perfil_bruto)
 

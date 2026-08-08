@@ -1,7 +1,7 @@
- from fastapi import APIRouter
+from fastapi import APIRouter
 from pydantic import BaseModel
 
-from backend.auth.autorizacao import gerar_nonce, montar_mensagem, verificar_assinatura, criar_token_sessao
+from backend.auth.security import gerar_nonce, montar_mensagem, verificar_assinatura, criar_token_sessao
 
 router = APIRouter(prefix="/auth", tags=["autenticacao"])
 
@@ -18,8 +18,7 @@ class PedidoVerificacao(BaseModel):
 @router.post("/nonce")
 def solicitar_nonce(pedido: PedidoNonce):
     """Passo 1: frontend pede um nonce/mensagem para assinar."""
-    nonce = gerar_nonce(pedido.endereco)
-    mensagem = montar_mensagem(pedido.endereco, nonce)
+    mensagem = gerar_nonce(pedido.endereco)
     return {"mensagem": mensagem}
 
 

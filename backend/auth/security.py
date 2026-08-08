@@ -15,14 +15,18 @@ NONCE_EXPIRA_SEGUNDOS = 300  # 5 minutos
 
 # Prototipo: dict em memoria. Em producao, troque por Redis
 # (ex: redis_client.setex(endereco, NONCE_EXPIRA_SEGUNDOS, nonce)).
-_nonces_pendentes: dict[str, tuple[str, float]] = {}
+# backend/auth/security.py
+
+# Agora guardamos a MENSAGEM inteira, nao so o nonce
+_pendentes: dict[str, tuple[str, float]] = {}  # endereco_lower -> (mensagem, criado_em)
 
 
 def gerar_nonce(endereco: str) -> str:
-    endereco = endereco.lower()
+    endereco_normalizado = endereco.lower()
     nonce = secrets.token_hex(16)
-    _nonces_pendentes[endereco] = (nonce, time.time())
-    return nonce
+    mensagem = montar_mensagem(endereco, nonce)  # usa o endereco ORIGINAL no texto
+    _pendentes[endereco_normalizado] = (mensagem, time.time())
+    return mensagem  # <- retorna a mensagem pronta, nao so o nonce
 
 
 def montar_mensagem(endereco: str, nonce: str) -> str:
@@ -34,26 +38,24 @@ def montar_mensagem(endereco: str, nonce: str) -> str:
 
 
 def verificar_assinatura(endereco: str, assinatura: str) -> bool:
-    endereco = endereco.lower()
+    endereco_normalizado = endereco.lower()
 
-    pendente = _nonces_pendentes.get(endereco)
+    pendente = _pendentes.get(endereco_normalizado)
     if pendente is None:
         raise HTTPException(status_code=400, detail="nenhum nonce pendente para este endereco")
 
-    nonce, criado_em = pendente
+    mensagem, criado_em = pendente  # <- reusa a mensagem EXATA, nao remonta
 
     if time.time() - criado_em > NONCE_EXPIRA_SEGUNDOS:
-        del _nonces_pendentes[endereco]
+        del _pendentes[endereco_normalizado]
         raise HTTPException(status_code=400, detail="nonce expirado, solicite um novo")
 
-    mensagem = montar_mensagem(endereco, nonce)
     mensagem_codificada = encode_defunct(text=mensagem)
-
     endereco_recuperado = Account.recover_message(mensagem_codificada, signature=assinatura)
-    autenticado = endereco_recuperado.lower() == endereco
 
-    # nonce e de uso unico, some apos a tentativa (sucesso ou falha)
-    del _nonces_pendentes[endereco]
+    autenticado = endereco_recuperado.lower() == endereco_normalizado
+
+    del _pendentes[endereco_normalizado]
 
     return autenticado
 

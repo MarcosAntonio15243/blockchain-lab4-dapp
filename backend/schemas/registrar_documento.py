@@ -1,7 +1,16 @@
 from enum import Enum
+from enum import IntEnum
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+class PerfilOnChain(IntEnum):
+    # Espelha o enum Perfil do contrato ControleAcesso.sol. A ordem importa.
+    NENHUM = 0
+    VARA = 1
+    POLICIA_FEDERAL = 2
+    COMPANHIA_AEREA = 3
+    CONSELHO_TUTELAR = 4
 
 
 class PerfilConsulente(str, Enum):
@@ -9,6 +18,11 @@ class PerfilConsulente(str, Enum):
     COMPANHIA_AEREA = "CompanhiaAerea"
     CONSELHO_TUTELAR = "ConselhoTutelar"
 
+MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE: dict[PerfilOnChain, PerfilConsulente] = {
+    PerfilOnChain.POLICIA_FEDERAL: PerfilConsulente.POLICIA_FEDERAL,
+    PerfilOnChain.COMPANHIA_AEREA: PerfilConsulente.COMPANHIA_AEREA,
+    PerfilOnChain.CONSELHO_TUTELAR: PerfilConsulente.CONSELHO_TUTELAR,
+}
 
 class DocumentoInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)

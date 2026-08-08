@@ -2,7 +2,7 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from web3 import Web3
 
 from backend.config import settings
@@ -13,10 +13,11 @@ from backend.schemas.registrar_documento import (
     PerfilConsulente,
     ResultadoValidacaoResponse,
 )
+from backend.schemas.registrar_documento import PerfilOnChain, MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE
+
 from backend.services.registrar_documento_service import RegistrarDocumentoService
 from backend.services.controle_acesso_service import ControleAcessoService
-from backend.auth.security import obter_endereco_autenticado
-
+from backend.auth.security import obter_endereco_autenticado    
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
 logger = logging.getLogger(__name__)
@@ -158,17 +159,22 @@ def substituir_documento(
         logger.exception("Erro ao substituir documento %s", doc_id)
         raise HTTPException(status_code=400, detail=str(erro))
 
-
 @router.get("/{doc_id}/validar", response_model=ResultadoValidacaoResponse)
 def validar_documento(
     doc_id: str,
     service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
-    endereco_autenticado: str = Depends(obter_endereco_autenticado),
     controle_acesso: ControleAcessoService = Depends(get_controle_acesso_service),
+    endereco_autenticado: str = Depends(obter_endereco_autenticado),
 ):
+    perfil_onchain = controle_acesso.consultar_perfil(endereco_autenticado)
+    perfil_consulente = MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE.get(perfil_onchain)
+
+    if perfil_consulente is None:
+        # cobre tanto Nenhum quanto Vara (Vara nao e um "consulente" nesta rota)
+        raise HTTPException(status_code=403, detail="perfil nao autorizado para validar documentos")
+
     try:
-        perfil_real = controle_acesso.consultar_perfil(endereco_autenticado)
-        return service.validar(doc_id, perfil_real)
+        return service.validar(doc_id, perfil_consulente)
     except KeyError:
         return {"existe": False}
     except Exception as erro:
