@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     ENDERECO_REGISTRO_DOCUMENTOS: str = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
 
+    JWT_SECRET_KEY: str = "troque-por-um-valor-aleatorio-forte"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
