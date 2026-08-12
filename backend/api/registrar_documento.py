@@ -27,9 +27,8 @@ router = APIRouter(prefix="/documentos", tags=["Documentos"])
 logger = logging.getLogger(__name__)
 
 ABI_PATH = (
-    Path(__file__).parent.parent.parent
-    / "artifacts"
-    / "RegistroDocumentos.sol"
+    Path(__file__).parent.parent
+    / "abi"
     / "RegistroDocumentos.json"
 )
 with open(ABI_PATH, "r", encoding="utf-8") as arquivo:

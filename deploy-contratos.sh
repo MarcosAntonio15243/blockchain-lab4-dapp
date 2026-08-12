@@ -7,7 +7,9 @@ forge build
 
 echo "[2/3] Copiando ABI compilada para o Backend..."
 mkdir -p backend/abi
-cp artifacts/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
+cp out/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
+cp out/RegistroDocumentos.sol/RegistroDocumentos.json backend/abi/RegistroDocumentos.json
+
 
 echo "[3/3] Realizando Deploy no nó Anvil local..."
 CONTROLE_ACESSO_OUTPUT=$(forge create contracts/ControleAcesso.sol:ControleAcesso \
