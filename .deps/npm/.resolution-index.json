@@ -12,6 +12,12 @@
       }
     }
   },
+  "backend/auth.sol": {
+    "__sources__": {}
+  },
+  "backend/__init__.sol": {
+    "__sources__": {}
+  },
   "contracts/RegistroDocumentos.sol": {
     "./ControleAcesso.sol": "contracts/ControleAcesso.sol",
     "__sources__": {
@@ -28,12 +34,9 @@
   "contracts/ControleAcesso.sol": {
     "__sources__": {
       "contracts/ControleAcesso.sol": {
-        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n// Contrato responsavel por controlar quais perfis cada endereco possui.\ncontract ControleAcesso {\n    enum Perfil {\n        Nenhum,\n        Vara,\n        PoliciaFederal,\n        CompanhiaAerea,\n        ConselhoTutelar\n    }\n\n    // Endereco que pode administrar os perfis.\n    address public administrador;\n\n    // Tabela que liga um endereco da blockchain ao seu perfil.\n    mapping(address => Perfil) private perfis;\n\n    event PerfilDefinido(address indexed conta, Perfil perfil);\n\n    // Modificador que restringe uma funcao apenas ao administrador.\n    modifier somenteAdministrador() {\n        // Interrompe a execucao se quem chamou a funcao nao for o administrador.\n        require(msg.sender == administrador, \"somente administrador\");\n\n        // Continua a execucao da funcao protegida pelo modificador.\n        _;\n    }\n\n    constructor() {\n        // Quem implanta o contrato vira o administrador.\n        administrador = msg.sender;\n\n        // O administrador inicial tambem recebe o perfil da Vara.\n        perfis[msg.sender] = Perfil.Vara;\n    }\n\n    // Define ou altera o perfil de uma conta.\n    function definirPerfil(address conta, Perfil perfil) external somenteAdministrador {\n        // Salva o perfil informado para o endereco recebido.\n        perfis[conta] = perfil;\n\n        emit PerfilDefinido(conta, perfil);\n    }\n\n    // // Consulta qual perfil uma conta possui.\n    // function perfilDe(address conta) external view returns (Perfil) {\n    //     // Retorna o perfil salvo no mapping; se nao houver cadastro, retorna Nenhum.\n    //     return perfis[conta];\n    // }\n\n    // // Verifica se uma conta possui exatamente o perfil informado.\n    // function temPerfil(address conta, Perfil perfil) external view returns (bool) {\n    //     // Retorna true se o perfil salvo for igual ao perfil consultado.\n    //     return perfis[conta] == perfil;\n    // }\n}\n",
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n// Contrato responsavel por controlar quais perfis cada endereco possui.\ncontract ControleAcesso {\n    enum Perfil {\n        Nenhum,\n        Vara,\n        PoliciaFederal,\n        CompanhiaAerea,\n        ConselhoTutelar\n    }\n\n    // Endereco que pode administrar os perfis.\n    address public administrador;\n\n    // Tabela que liga um endereco da blockchain ao seu perfil.\n    mapping(address => Perfil) private perfis;\n\n    event PerfilDefinido(address indexed conta, Perfil perfil);\n\n    // Modificador que restringe uma funcao apenas ao administrador.\n    modifier somenteAdministrador() {\n        // Interrompe a execucao se quem chamou a funcao nao for o administrador.\n        require(msg.sender == administrador, \"somente administrador\");\n\n        // Continua a execucao da funcao protegida pelo modificador.\n        _;\n    }\n\n    constructor() {\n        // Quem implanta o contrato vira o administrador.\n        administrador = msg.sender;\n\n        // O administrador inicial tambem recebe o perfil da Vara.\n        perfis[msg.sender] = Perfil.Vara;\n    }\n\n    // Define ou altera o perfil de uma conta.\n    function definirPerfil(address conta, Perfil perfil) external somenteAdministrador {\n        // Salva o perfil informado para o endereco recebido.\n        perfis[conta] = perfil;\n\n        emit PerfilDefinido(conta, perfil);\n    }\n\n    // Consulta qual perfil uma conta possui.\n    function perfilDe(address conta) external view returns (Perfil) {\n        return perfis[conta];\n    }\n\n    // Verifica se uma conta possui exatamente o perfil informado.\n    function temPerfil(address conta, Perfil perfil) external view returns (bool) {\n        return perfis[conta] == perfil;\n    }\n}\n",
         "file": "contracts/ControleAcesso.sol"
       }
     }
-  },
-  "backend/auth.sol": {
-    "__sources__": {}
   }
 }

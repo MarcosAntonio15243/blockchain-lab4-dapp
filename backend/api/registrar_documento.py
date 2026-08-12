@@ -19,6 +19,10 @@ from backend.services.registrar_documento_service import RegistrarDocumentoServi
 from backend.services.controle_acesso_service import ControleAcessoService
 from backend.auth.security import obter_endereco_autenticado    
 
+from backend.database import get_db
+from backend.services.permissao_leitura_service import PermissaoLeituraService
+from sqlalchemy.orm import Session
+
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
 logger = logging.getLogger(__name__)
 
@@ -113,22 +117,35 @@ def registrar_documento(
         logger.exception("Erro ao registrar documento")
         raise HTTPException(status_code=400, detail=str(erro))
 
+from fastapi import HTTPException
 
 @router.get("/{doc_id}", response_model=DocumentoResponse)
 def consultar_documento(
     doc_id: str,
     service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
+    controle_acesso: ControleAcessoService = Depends(get_controle_acesso_service),
     endereco_autenticado: str = Depends(obter_endereco_autenticado),
+    db: Session = Depends(get_db),
 ):
     try:
+        perfil_onchain = controle_acesso.consultar_perfil(endereco_autenticado)
+
+        if perfil_onchain != PerfilOnChain.VARA:
+            perfil_consulente = MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE.get(perfil_onchain)
+            permissao_service = PermissaoLeituraService(db)
+            pode_ler = permissao_service.pode_ler(doc_id, endereco_autenticado, perfil_consulente)
+            if not pode_ler:
+                raise HTTPException(status_code=403, detail="sem permissao para ler este documento")
+
         return service.consultar(doc_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="Documento não encontrado.")
+    except HTTPException:
+        raise  # <- deixa passar sem reembalar, preserva o status_code original
     except Exception as erro:
         logger.exception("Erro ao consultar documento %s", doc_id)
         raise HTTPException(status_code=400, detail=str(erro))
-
-
+        
 @router.post("/{doc_id}/revogar", response_model=DocumentoResponse)
 def revogar_documento(
     doc_id: str,
