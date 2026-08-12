@@ -1,5 +1,11 @@
 from pydantic import BaseModel
 
+class PedidoNonce(BaseModel):
+    endereco: str
+
+class PedidoVerificacao(BaseModel):
+    endereco: str
+    assinatura: str
 
 class PedidoNonceSchema(BaseModel):
     conta: str
