@@ -31,6 +31,7 @@ printf '%s\n' \
   "ENDERECO_REGISTRO_DOCUMENTOS=$REGISTRO_DOCUMENTOS_ADDRESS" \
   "BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545" \
   "CHAVE_PRIVADA_ADMIN=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
+  "DATABASE_URL=sqlite:///./banco.db" \
   > backend/.env
 
 echo ""

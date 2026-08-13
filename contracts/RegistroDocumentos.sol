@@ -106,10 +106,13 @@ contract RegistroDocumentos {
             bytes32 hashDocumento,
             string memory tipoDocumento,
             string memory orgaoEmissor,
+            string memory autoridadeSignataria,
+            bytes32 hashAssinatura,
             uint256 emitidoEm,
             uint256 validoAte,
             StatusDocumento status,
-            bytes32 substituidoPor
+            bytes32 substituidoPor,
+            uint256 statusAtualizadoEm
         )
     {
         Documento memory documento = documentos[docId];
@@ -119,10 +122,13 @@ contract RegistroDocumentos {
             documento.hashDocumento,
             documento.tipoDocumento,
             documento.orgaoEmissor,
+            documento.autoridadeSignataria,
+            documento.hashAssinatura,
             documento.emitidoEm,
             documento.validoAte,
             statusAtualInterno(documento),
-            documento.substituidoPor
+            documento.substituidoPor,
+            documento.statusAtualizadoEm
         );
     }
 
@@ -130,17 +136,18 @@ contract RegistroDocumentos {
         require(documentos[docId].existe, "documento inexistente");
 
         documentos[docId].status = StatusDocumento.Revogado;
+        documentos[docId].statusAtualizadoEm = block.timestamp;
 
         emit DocumentoRevogado(docId);
     }
 
-    // Marca um documento como substituido por outro documento ja registrado.
     function substituirDocumento(bytes32 docId, bytes32 novoDocId) external somenteVara {
         require(documentos[docId].existe, "documento inexistente");
         require(documentos[novoDocId].existe, "novo documento inexistente");
 
         documentos[docId].status = StatusDocumento.Substituido;
         documentos[docId].substituidoPor = novoDocId;
+        documentos[docId].statusAtualizadoEm = block.timestamp;
 
         emit DocumentoSubstituido(docId, novoDocId);
     }
