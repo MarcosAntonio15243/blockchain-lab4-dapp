@@ -11,6 +11,7 @@ mkdir -p backend/abi
 cp out/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
 cp out/RegistroDocumentos.sol/RegistroDocumentos.json backend/abi/RegistroDocumentos.json
 
+
 echo "[3/4] Realizando Deploy no nó Anvil local..."
 CHAVE_ADMIN=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 RPC=http://127.0.0.1:8545
