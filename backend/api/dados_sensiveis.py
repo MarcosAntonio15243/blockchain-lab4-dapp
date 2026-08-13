@@ -7,8 +7,10 @@ from backend.database import get_db
 from backend.services.dados_sensiveis_service import DadosSensiveisService
 from backend.services.permissao_leitura_service import PermissaoLeituraService
 from backend.services.controle_acesso_service import ControleAcessoService
+from backend.schemas.dados_sensiveis import CadastrarDadosSensiveisInput, DadosSensiveisResponse
 from backend.schemas.registrar_documento import PerfilOnChain, MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE
-from backend.api.controle_acesso import exigir_perfil_administrador, get_controle_acesso_service
+from backend.api.registrar_documento import exigir_perfil_vara
+from backend.api.controle_acesso import get_controle_acesso_service
 from backend.auth.security import obter_endereco_autenticado
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -16,11 +18,6 @@ from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
 import io
 
-from backend.database import get_db
-from backend.schemas.dados_sensiveis import CadastrarDadosSensiveisInput, DadosSensiveisResponse
-from backend.services.dados_sensiveis_service import DadosSensiveisService
-from backend.api.controle_acesso import exigir_perfil_administrador
-from backend.auth.security import obter_endereco_autenticado
 
 
 router = APIRouter(prefix="/documentos", tags=["Dados Sensíveis"])
@@ -30,7 +27,7 @@ def cadastrar_dados_sensiveis(
     doc_id: str,
     dados: CadastrarDadosSensiveisInput,
     db: Session = Depends(get_db),
-    endereco_autenticado: str = Depends(exigir_perfil_administrador),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
     if dados.doc_id != doc_id:
         raise HTTPException(status_code=400, detail="doc_id do corpo nao bate com o da URL")
@@ -57,7 +54,7 @@ async def anexar_arquivo(
     doc_id: str,
     arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
-    endereco_autenticado: str = Depends(exigir_perfil_administrador),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
     if arquivo.content_type not in TIPOS_PERMITIDOS:
         raise HTTPException(status_code=415, detail="Apenas arquivos PDF são aceitos.")
