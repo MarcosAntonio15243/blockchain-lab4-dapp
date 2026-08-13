@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+import hashlib
+from fastapi import APIRouter, Depends, File, HTTPException, Header, UploadFile
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -107,3 +108,32 @@ def validar_documento_publico(
         resposta["data_emissao"] = documento["emitido_em"]
 
     return resposta
+
+
+@router.post("/{doc_id}/conferir-integridade")
+async def conferir_integridade(
+    doc_id: str,
+    arquivo: UploadFile = File(...),
+    service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
+):
+    """
+    Confere se o PDF apresentado corresponde ao documento registrado on-chain.
+    Publica de proposito: quem tem o arquivo ja tem o conteudo, e a resposta
+    e apenas confere/nao confere. Nao expoe nenhum dado novo.
+    """
+    try:
+        documento = service.consultar(doc_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Código de validação inválido.")
+
+    conteudo = await arquivo.read()
+    hash_apresentado = "0x" + hashlib.sha256(conteudo).hexdigest()
+
+    integro = hash_apresentado.lower() == documento["hash_documento"].lower()
+
+    return {
+        "integro": integro,
+        "situacao": documento["status"],
+        "hash_apresentado": hash_apresentado,
+        "hash_registrado": documento["hash_documento"],
+    }
