@@ -1,6 +1,6 @@
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from eth_account.messages import encode_defunct
 from eth_account import Account
@@ -56,7 +56,7 @@ def verificar_assinatura(endereco: str, assinatura: str) -> bool:
 
 
 def criar_token_sessao(endereco: str) -> str:
-    expira_em = datetime.utcnow() + timedelta(minutes=SESSAO_EXPIRA_MINUTOS)
+    expira_em = datetime.now(timezone.utc) + timedelta(minutes=SESSAO_EXPIRA_MINUTOS)
     payload = {"sub": endereco.lower(), "exp": expira_em}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=ALGORITHM)
 
