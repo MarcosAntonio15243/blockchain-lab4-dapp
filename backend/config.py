@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     JWT_SECRET_KEY: str 
 
-    CHAVE_CRIPTOGRAFIA_DADOS_SENSIVEIS: str = "aYLb4ukCdBLEQJNs_evtdazC4t4T6zYQYIE486QgEy4="
+    CHAVE_CRIPTOGRAFIA_DADOS_SENSIVEIS: str 
 
     DATABASE_URL: str = f"sqlite:///{RAIZ / 'banco.db'}"
 
