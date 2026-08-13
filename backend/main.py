@@ -7,7 +7,7 @@ from backend.api.registrar_documento import router as documentos_router
 from backend.api.controle_acesso import router as acessos_router
 from backend.api.autenticacao import router as autenticacao_router
 from backend.api.permissao_leitura import router as permissoes_router
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
@@ -25,6 +25,14 @@ app.include_router(documentos_router, prefix="/api/v1")
 app.include_router(acessos_router, prefix="/api/v1")
 app.include_router(autenticacao_router, prefix="/api/v1")
 app.include_router(permissoes_router, prefix="/api/v1")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],   e
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def health_check():

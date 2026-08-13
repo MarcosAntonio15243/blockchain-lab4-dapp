@@ -27,9 +27,8 @@ router = APIRouter(prefix="/documentos", tags=["Documentos"])
 logger = logging.getLogger(__name__)
 
 ABI_PATH = (
-    Path(__file__).parent.parent.parent
-    / "artifacts"
-    / "RegistroDocumentos.sol"
+    Path(__file__).parent.parent
+    / "abi"
     / "RegistroDocumentos.json"
 )
 with open(ABI_PATH, "r", encoding="utf-8") as arquivo:
@@ -95,7 +94,7 @@ def exigir_perfil_vara(
 @router.get("", response_model=list[DocumentoResponse])
 def listar_documentos(
     service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
-    endereco_autenticado: str = Depends(obter_endereco_autenticado),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
     try:
         return service.listar()
@@ -104,20 +103,18 @@ def listar_documentos(
         raise HTTPException(status_code=400, detail=str(erro))
 
 
-@router.post("", response_model=HashTransacaoResponse)
+@router.post("", response_model=DocumentoResponse)
 def registrar_documento(
     requisicao: DocumentoInput,
     service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
     endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
     try:
-        documento = service.registrar(requisicao)
-        return {"hash_transacao": documento["hash_transacao"]}
+         return service.registrar(requisicao)
     except Exception as erro:
         logger.exception("Erro ao registrar documento")
         raise HTTPException(status_code=400, detail=str(erro))
 
-from fastapi import HTTPException
 
 @router.get("/{doc_id}", response_model=DocumentoResponse)
 def consultar_documento(
