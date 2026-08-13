@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     JWT_SECRET_KEY: str = "troque-por-um-valor-aleatorio-forte"
 
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite:///./banco.db"
 
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,

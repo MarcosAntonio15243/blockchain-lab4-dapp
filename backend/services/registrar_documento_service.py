@@ -76,25 +76,33 @@ class RegistrarDocumentoService:
             "hash_documento": Web3.to_hex(resposta[1]),
             "tipo_documento": resposta[2],
             "orgao_emissor": resposta[3],
-            "autoridade_signataria": None,
-            "hash_assinatura": None,
+            "autoridade_signataria": resposta[4],
+            "hash_assinatura": (
+                None
+                if bytes(resposta[5]) == bytes(32)
+                else Web3.to_hex(resposta[5])
+            ),
             "emitido_em": datetime.fromtimestamp(
-                int(resposta[4]), tz=timezone.utc
+                int(resposta[6]), tz=timezone.utc
             ).isoformat(),
             "valido_ate": (
-                datetime.fromtimestamp(int(resposta[5]), tz=timezone.utc)
+                datetime.fromtimestamp(int(resposta[7]), tz=timezone.utc)
                 .date()
                 .isoformat()
-                if resposta[5]
+                if resposta[7]
                 else None
             ),
-            "status": STATUS[int(resposta[6])],
+            "status": STATUS[int(resposta[8])],
             "substituido_por": (
                 None
-                if bytes(resposta[7]) == bytes(32)
-                else Web3.to_hex(resposta[7])
+                if bytes(resposta[9]) == bytes(32)
+                else Web3.to_hex(resposta[9])
             ),
-            "status_atualizado_em": None,
+            "status_atualizado_em": (
+                datetime.fromtimestamp(int(resposta[10]), tz=timezone.utc).isoformat()
+                if resposta[10]
+                else None
+            ),
             "existe": True,
         }
 

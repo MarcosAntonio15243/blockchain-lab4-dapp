@@ -5,3 +5,4 @@ cache/
 .hardhat-config/
 .env
 __pycache__/
+.deps/
