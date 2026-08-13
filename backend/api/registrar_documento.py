@@ -172,25 +172,3 @@ def substituir_documento(
     except Exception as erro:
         logger.exception("Erro ao substituir documento %s", doc_id)
         raise HTTPException(status_code=400, detail=str(erro))
-
-@router.get("/{doc_id}/validar", response_model=ResultadoValidacaoResponse)
-def validar_documento(
-    doc_id: str,
-    service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
-    controle_acesso: ControleAcessoService = Depends(get_controle_acesso_service),
-    endereco_autenticado: str = Depends(obter_endereco_autenticado),
-):
-    perfil_onchain = controle_acesso.consultar_perfil(endereco_autenticado)
-    perfil_consulente = MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE.get(perfil_onchain)
-
-    if perfil_consulente is None:
-        # cobre tanto Nenhum quanto Vara (Vara nao e um "consulente" nesta rota)
-        raise HTTPException(status_code=403, detail="perfil nao autorizado para validar documentos")
-
-    try:
-        return service.validar(doc_id, perfil_consulente)
-    except KeyError:
-        return {"existe": False}
-    except Exception as erro:
-        logger.exception("Erro ao validar documento %s", doc_id)
-        raise HTTPException(status_code=400, detail=str(erro))

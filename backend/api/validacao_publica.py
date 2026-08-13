@@ -15,22 +15,9 @@ from backend.api.registrar_documento import (
     get_controle_acesso_service,
 )
 from backend.auth.security import obter_endereco_autenticado
+from backend.auth.security import obter_endereco_autenticado, obter_endereco_opcional
 
 router = APIRouter(prefix="/validacao", tags=["Validação Pública (QR Code)"])
-
-
-def obter_endereco_opcional(authorization: Optional[str] = Header(None)) -> Optional[str]:
-    """
-    Diferente de obter_endereco_autenticado: nao exige login.
-    Se vier um token valido, devolve o endereco; caso contrario, None.
-    Permite que a mesma rota atenda consulta anonima (QR) e institucional.
-    """
-    if not authorization:
-        return None
-    try:
-        return obter_endereco_autenticado(authorization)
-    except HTTPException:
-        return None
 
 
 def _tem_acesso_ampliado(
