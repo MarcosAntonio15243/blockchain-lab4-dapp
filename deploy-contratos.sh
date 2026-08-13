@@ -3,6 +3,9 @@ set -e
 
 ENV_FILE=backend/.env
 
+echo "[PRE] Limpando contratos antigos"
+forge clean
+
 echo "[1/4] Compilando contratos Solidity..."
 forge build
 
