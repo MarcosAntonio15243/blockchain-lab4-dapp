@@ -3,34 +3,30 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from web3 import Web3
 
 from backend.config import settings
 from backend.schemas.registrar_documento import (
     DocumentoInput,
     DocumentoResponse,
-    HashTransacaoResponse,
-    PerfilConsulente,
-    ResultadoValidacaoResponse,
+    PerfilOnChain,
+    MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE,
 )
-from backend.schemas.registrar_documento import PerfilOnChain, MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE
+from backend.schemas.dados_sensiveis import CadastrarDadosSensiveisInput
 
 from backend.services.registrar_documento_service import RegistrarDocumentoService
 from backend.services.controle_acesso_service import ControleAcessoService
-from backend.auth.security import obter_endereco_autenticado    
-
-from backend.database import get_db
 from backend.services.permissao_leitura_service import PermissaoLeituraService
-from sqlalchemy.orm import Session
+from backend.services.dados_sensiveis_service import DadosSensiveisService
+from backend.auth.security import obter_endereco_autenticado
+from backend.database import get_db
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
 logger = logging.getLogger(__name__)
 
-ABI_PATH = (
-    Path(__file__).parent.parent
-    / "abi"
-    / "RegistroDocumentos.json"
-)
+ABI_PATH = Path(__file__).parent.parent / "abi" / "RegistroDocumentos.json"
+
 with open(ABI_PATH, "r", encoding="utf-8") as arquivo:
     conteudo = json.load(arquivo)
     REGISTRO_DOCUMENTOS_ABI = conteudo.get("abi", conteudo)
@@ -42,9 +38,6 @@ with open(ABI_CONTROLE_ACESSO_PATH, "r", encoding="utf-8") as arquivo:
     CONTROLE_ACESSO_ABI = conteudo_controle_acesso.get("abi", conteudo_controle_acesso)
 
 w3_provider = Web3(Web3.HTTPProvider(settings.BLOCKCHAIN_RPC_URL))
-
-# Enum StatusDocumento/Perfil do seu ControleAcesso.sol: Nenhum=0, Vara=1, PoliciaFederal=2, ...
-PERFIL_VARA = 1
 
 
 def get_registro_documentos_service() -> RegistrarDocumentoService:
@@ -86,7 +79,7 @@ def exigir_perfil_vara(
     autenticado por assinatura possuir o perfil Vara on-chain.
     """
     perfil_atual = controle_acesso.consultar_perfil(endereco)
-    if perfil_atual != PERFIL_VARA:
+    if perfil_atual != PerfilOnChain.VARA:
         raise HTTPException(status_code=403, detail="perfil nao autorizado para esta acao")
     return endereco
 
@@ -110,10 +103,45 @@ def registrar_documento(
     endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
     try:
-         return service.registrar(requisicao)
+        return service.registrar(requisicao)
     except Exception as erro:
         logger.exception("Erro ao registrar documento")
         raise HTTPException(status_code=400, detail=str(erro))
+
+
+# IMPORTANTE: /emitir precisa vir ANTES de /{doc_id}, senao o FastAPI
+# interpreta "emitir" como se fosse um doc_id.
+@router.post("/emitir", response_model=DocumentoResponse)
+def emitir_documento(
+    documento: DocumentoInput,
+    dados_pessoais: CadastrarDadosSensiveisInput,
+    service: RegistrarDocumentoService = Depends(get_registro_documentos_service),
+    db: Session = Depends(get_db),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
+):
+    """
+    Registra o documento on-chain e grava os dados pessoais em uma unica
+    chamada. Equivale a POST /documentos + POST /documentos/{id}/dados-sensiveis.
+
+    Sem rollback: se a gravacao dos dados pessoais falhar, o registro on-chain
+    permanece e a validacao passa a responder apenas no nivel basico. O doc_id
+    vai para o log para permitir completar depois.
+
+    O PDF continua sendo anexado por POST /documentos/{doc_id}/arquivo.
+    """
+    resultado = service.registrar(documento)
+    doc_id = resultado["doc_id"]
+
+    dados_pessoais.doc_id = doc_id
+    try:
+        DadosSensiveisService(db).cadastrar(dados_pessoais, criado_por=endereco_autenticado)
+    except Exception:
+        logger.exception(
+            "Documento %s registrado on-chain, mas falhou ao gravar dados pessoais", doc_id
+        )
+        raise
+
+    return resultado
 
 
 @router.get("/{doc_id}", response_model=DocumentoResponse)
@@ -138,11 +166,12 @@ def consultar_documento(
     except KeyError:
         raise HTTPException(status_code=404, detail="Documento não encontrado.")
     except HTTPException:
-        raise  # <- deixa passar sem reembalar, preserva o status_code original
+        raise  # preserva o status_code original
     except Exception as erro:
         logger.exception("Erro ao consultar documento %s", doc_id)
         raise HTTPException(status_code=400, detail=str(erro))
-        
+
+
 @router.post("/{doc_id}/revogar", response_model=DocumentoResponse)
 def revogar_documento(
     doc_id: str,
