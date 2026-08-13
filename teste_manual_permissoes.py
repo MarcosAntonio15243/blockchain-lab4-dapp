@@ -102,6 +102,37 @@ doc_id = documentos[-1]["docId"] if "docId" in documentos[-1] else documentos[-1
 print(f"   doc_id: {doc_id}\n")
 
 # ---------------------------------------------------------------------------
+# 2.1) Vara anexa um PDF de teste ao documento
+# ---------------------------------------------------------------------------
+
+print("2.1) Gerando PDF de teste e anexando ao documento...")
+conteudo_pdf_teste = b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>"
+
+# Precisa dos dados sensiveis cadastrados antes do arquivo (o service exige o registro existir)
+resposta = requests.post(
+    f"{BASE_URL}/documentos/{doc_id}/dados-sensiveis",
+    json={
+        "docId": doc_id,
+        "categoria": "alvara_viagem",
+        "nomeCrianca": "Crianca de Teste",
+        "nomeAcompanhante": "Acompanhante de Teste",
+        "destinoViagem": "Recife/PE",
+    },
+    headers=cabecalho(token_admin),
+)
+print(f"   status(dados-sensiveis)={resposta.status_code}")
+assert resposta.status_code == 200, f"Falha ao cadastrar dados sensiveis: {resposta.text}"
+
+resposta = requests.post(
+    f"{BASE_URL}/documentos/{doc_id}/arquivo",
+    files={"arquivo": ("alvara_teste.pdf", conteudo_pdf_teste, "application/pdf")},
+    headers=cabecalho(token_admin),
+)
+print(f"   status(anexar arquivo)={resposta.status_code} corpo={resposta.json()}")
+assert resposta.status_code == 200, "Falha ao anexar arquivo"
+print("✅ PDF anexado.\n")
+
+# ---------------------------------------------------------------------------
 # 3. SEM permissao concedida: Policia Federal tenta ler -> deve ser 403
 # ---------------------------------------------------------------------------
 
@@ -110,6 +141,16 @@ resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}", headers=cabecalho(tok
 print(f"   status={resposta.status_code} corpo={resposta.json()}")
 assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
 print("✅ Bloqueado corretamente.\n")
+
+# ---------------------------------------------------------------------------
+# 3.1) SEM permissao: tentar baixar o arquivo -> deve ser 403
+# ---------------------------------------------------------------------------
+
+print("3.1) Tentando baixar o ARQUIVO sem permissao (esperado: 403)...")
+resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}/arquivo", headers=cabecalho(token_policia))
+print(f"   status={resposta.status_code}")
+assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
+print("✅ Download bloqueado corretamente.\n")
 
 # ---------------------------------------------------------------------------
 # 4. Vara concede permissao de leitura (sem expiracao) -> deve liberar
@@ -132,6 +173,17 @@ assert resposta.status_code == 200, f"Esperava 200, veio {resposta.status_code}:
 print("✅ Leitura liberada apos concessao.\n")
 
 # ---------------------------------------------------------------------------
+# 4.1) Com permissao concedida (passo 4): arquivo tambem deve liberar
+# ---------------------------------------------------------------------------
+
+print("4.1) Baixando o ARQUIVO apos concessao de permissao (esperado: 200)...")
+resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}/arquivo", headers=cabecalho(token_policia))
+print(f"   status={resposta.status_code}")
+assert resposta.status_code == 200, f"Esperava 200, veio {resposta.status_code}: {resposta.text}"
+assert resposta.content == conteudo_pdf_teste, "Conteudo do PDF baixado nao bate com o original"
+print("✅ Download liberado e conteúdo íntegro.\n")
+
+# ---------------------------------------------------------------------------
 # 5. Revogando a permissao -> deve voltar a bloquear
 # ---------------------------------------------------------------------------
 
@@ -151,7 +203,17 @@ assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
 print("✅ Bloqueado corretamente apos revogacao.\n")
 
 # ---------------------------------------------------------------------------
-# 6. Permissao com tempo limite curto -> deve expirar sozinha
+# 5.1) Apos revogacao (passo 5): arquivo deve voltar a bloquear
+# ---------------------------------------------------------------------------
+
+print("5.1) Tentando baixar o ARQUIVO apos revogacao (esperado: 403)...")
+resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}/arquivo", headers=cabecalho(token_policia))
+print(f"   status={resposta.status_code}")
+assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
+print("✅ Download bloqueado corretamente apos revogacao.\n")
+
+# ---------------------------------------------------------------------------
+# 6) Permissao com tempo limite curto -> deve expirar sozinha (dados + arquivo)
 # ---------------------------------------------------------------------------
 
 print("6) Concedendo permissao com expiracao em 5 segundos...")
@@ -164,19 +226,29 @@ resposta = requests.post(
 print(f"   status={resposta.status_code} corpo={resposta.json()}")
 assert resposta.status_code == 200, "Falha ao conceder permissao com prazo"
 
-print("   Lendo imediatamente (esperado: 200, ainda dentro do prazo)...")
+print("   Lendo DADOS imediatamente (esperado: 200, ainda dentro do prazo)...")
 resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}", headers=cabecalho(token_policia))
+assert resposta.status_code == 200, f"Esperava 200, veio {resposta.status_code}"
+print("✅ Leitura de dados liberada dentro do prazo.\n")
+
+print("   Baixando ARQUIVO imediatamente (esperado: 200, ainda dentro do prazo)...")
+resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}/arquivo", headers=cabecalho(token_policia))
 print(f"   status={resposta.status_code}")
 assert resposta.status_code == 200, f"Esperava 200, veio {resposta.status_code}"
-print("✅ Leitura liberada dentro do prazo.\n")
+print("✅ Download de arquivo liberado dentro do prazo.\n")
 
 esperar(6, "esperando o prazo de 5s expirar")
 
-print("   Lendo apos o prazo expirar (esperado: 403)...")
+print("   Lendo DADOS apos o prazo expirar (esperado: 403)...")
 resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}", headers=cabecalho(token_policia))
+assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
+print("✅ Leitura de dados bloqueada corretamente apos expiracao.\n")
+
+print("   Baixando ARQUIVO apos o prazo expirar (esperado: 403)...")
+resposta = requests.get(f"{BASE_URL}/documentos/{doc_id}/arquivo", headers=cabecalho(token_policia))
 print(f"   status={resposta.status_code}")
 assert resposta.status_code == 403, f"Esperava 403, veio {resposta.status_code}"
-print("✅ Bloqueado corretamente apos expiracao.\n")
+print("✅ Download de arquivo bloqueado corretamente apos expiracao.\n")
 
 # ---------------------------------------------------------------------------
 # 7. Vara sempre pode ler, independente de permissao (esperado: 200)
