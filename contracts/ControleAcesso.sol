@@ -44,15 +44,13 @@ contract ControleAcesso {
         emit PerfilDefinido(conta, perfil);
     }
 
-    // // Consulta qual perfil uma conta possui.
-    // function perfilDe(address conta) external view returns (Perfil) {
-    //     // Retorna o perfil salvo no mapping; se nao houver cadastro, retorna Nenhum.
-    //     return perfis[conta];
-    // }
+    // Consulta qual perfil uma conta possui.
+    function perfilDe(address conta) external view returns (Perfil) {
+        return perfis[conta];
+    }
 
-    // // Verifica se uma conta possui exatamente o perfil informado.
-    // function temPerfil(address conta, Perfil perfil) external view returns (bool) {
-    //     // Retorna true se o perfil salvo for igual ao perfil consultado.
-    //     return perfis[conta] == perfil;
-    // }
+    // Verifica se uma conta possui exatamente o perfil informado.
+    function temPerfil(address conta, Perfil perfil) external view returns (bool) {
+        return perfis[conta] == perfil;
+    }
 }

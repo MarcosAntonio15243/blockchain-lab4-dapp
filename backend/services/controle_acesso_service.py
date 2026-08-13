@@ -2,6 +2,8 @@ import json
 from web3 import Web3
 from backend.schemas.controle_acesso import PerfilEnum
 
+from backend.schemas.registrar_documento import PerfilOnChain
+
 class ControleAcessoService:
     def __init__(self, w3: Web3, contract_address: str, abi: list, private_key: str):
         self.w3 = w3
@@ -32,8 +34,7 @@ class ControleAcessoService:
         return comprovante.transactionHash.hex()
 
     def consultar_perfil(self, conta: str) -> PerfilOnChain:
-        perfil_bruto = self.contract.functions.perfilDe(
+        perfil_bruto = self.contrato.functions.perfilDe(
             self.w3.to_checksum_address(conta)
         ).call()
         return PerfilOnChain(perfil_bruto)
-

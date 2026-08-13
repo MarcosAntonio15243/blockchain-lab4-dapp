@@ -13,11 +13,6 @@ ALGORITHM = "HS256"
 SESSAO_EXPIRA_MINUTOS = 30
 NONCE_EXPIRA_SEGUNDOS = 300  # 5 minutos
 
-# Prototipo: dict em memoria. Em producao, troque por Redis
-# (ex: redis_client.setex(endereco, NONCE_EXPIRA_SEGUNDOS, nonce)).
-# backend/auth/security.py
-
-# Agora guardamos a MENSAGEM inteira, nao so o nonce
 _pendentes: dict[str, tuple[str, float]] = {}  # endereco_lower -> (mensagem, criado_em)
 
 

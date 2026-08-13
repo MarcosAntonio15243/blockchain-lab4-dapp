@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from backend.api.registrar_documento import router as documentos_router
 from backend.api.controle_acesso import router as acessos_router
 from backend.api.autenticacao import router as autenticacao_router
+from backend.api.permissao_leitura import router as permissoes_router
 
 
 app = FastAPI()
@@ -23,6 +24,7 @@ async def tratar_erro_interno(request: Request, erro: Exception):
 app.include_router(documentos_router, prefix="/api/v1")
 app.include_router(acessos_router, prefix="/api/v1")
 app.include_router(autenticacao_router, prefix="/api/v1")
+app.include_router(permissoes_router, prefix="/api/v1")
 
 @app.get("/")
 def health_check():
