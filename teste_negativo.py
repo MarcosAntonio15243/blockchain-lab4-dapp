@@ -50,10 +50,10 @@ def cab(token):
     return {"Authorization": f"Bearer {token}"}
 
 
-def definir_perfil(token_quem, endereco, perfil):
+def definir_perfil(token_quem, endereco, perfil, nome):
     return requests.post(
         f"{BASE_URL}/acessos/definir-perfil",
-        json={"conta": endereco, "perfil": perfil},
+        json={"conta": endereco, "perfil": perfil, "nome": nome},
         headers=cab(token_quem),
         timeout=15,
     )
@@ -91,7 +91,7 @@ print(f"   Vara:     {admin.address}")
 print(f"   Externo:  {externo.address}")
 print(f"   Estranho: {estranho.address}")
 
-r = definir_perfil(token_admin, externo.address, 3)  # 3 = CompanhiaAerea
+r = definir_perfil(token_admin, externo.address, 3, "AZUL")  # 3 = CompanhiaAerea
 if r.status_code >= 300:
     print(f"\n   !! Falha ao definir perfil ({r.status_code}): {r.text}")
     sys.exit(1)
@@ -177,11 +177,11 @@ checar("externo revoga documento",
        requests.post(f"{BASE_URL}/documentos/{doc_a}/revogar",
                      headers=cab(token_externo), timeout=15).status_code, 403)
 checar("externo se autopromove a Vara",
-       definir_perfil(token_externo, externo.address, 1).status_code, 403)
+       definir_perfil(token_externo, externo.address, 1, "Polícia Federal - PB").status_code, 403)
 checar("sem perfil lista documentos",
        requests.get(f"{BASE_URL}/documentos", headers=cab(token_estranho), timeout=10).status_code, 403)
 checar("sem perfil define perfil",
-       definir_perfil(token_estranho, estranho.address, 1).status_code, 403)
+       definir_perfil(token_estranho, estranho.address, 1, "Polícia Federal - PB").status_code, 403)
 
 # ----------------------------------------------------------------------
 print("\nBLOCO 3 — GRANT POR DOCUMENTO (o coração do projeto)")

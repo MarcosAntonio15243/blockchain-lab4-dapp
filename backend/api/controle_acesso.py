@@ -2,6 +2,9 @@ import json
 from web3 import Web3
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+
+from backend.database import get_db
 
 from backend.api.registrar_documento import exigir_perfil_vara
 from backend.config import settings
@@ -21,8 +24,9 @@ with open(ABI_PATH, "r") as f:
 w3_provider = Web3(Web3.HTTPProvider(settings.BLOCKCHAIN_RPC_URL))
 
 
-
-def get_controle_acesso_service() -> ControleAcessoService:
+def get_controle_acesso_service(
+    db: Session = Depends(get_db)
+) -> ControleAcessoService:
     if not w3_provider.is_connected():
         raise HTTPException(status_code=503, detail="Blockchain indisponível.")
     return ControleAcessoService(
@@ -30,6 +34,7 @@ def get_controle_acesso_service() -> ControleAcessoService:
         contract_address=settings.ENDERECO_CONTROLE_ACESSO,
         abi=CONTROLE_ACESSO_ABI,
         private_key=settings.CHAVE_PRIVADA_ADMIN,
+        db=db
     )
 
 
@@ -40,7 +45,8 @@ def definir_perfil(
     endereco_autenticado: str = Depends(exigir_perfil_vara),  # <- protecao adicionada
 ):
     try:
-        hash_tx = service.definir_perfil(requisicao.conta, requisicao.perfil)
+        hash_tx = service.definir_perfil(requisicao.conta, requisicao.perfil, requisicao.nome, endereco_autenticado)
+
         return DefinirPerfilResponse(
             sucesso=True,
             hash_transacao=hash_tx,
