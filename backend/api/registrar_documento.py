@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 
 from backend.config import settings
+from backend.schemas.consulta_documento import ConsultaResponse
 from backend.schemas.registrar_documento import (
     DocumentoInput,
     DocumentoResponse,
@@ -18,6 +19,7 @@ from backend.schemas.registrar_documento import (
 )
 from backend.schemas.dados_sensiveis import CadastrarDadosSensiveisInput
 
+from backend.services.consulta_service import ConsultaService
 from backend.services.registrar_documento_service import RegistrarDocumentoService
 from backend.services.controle_acesso_service import ControleAcessoService
 from backend.services.permissao_leitura_service import PermissaoLeituraService
@@ -207,3 +209,14 @@ def substituir_documento(
     except Exception as erro:
         logger.exception("Erro ao substituir documento %s", doc_id)
         raise HTTPException(status_code=400, detail=str(erro))
+
+
+@router.get("/{doc_id}/consultas", response_model=list[ConsultaResponse])
+def listar_consultas(
+    doc_id: str,
+    perfil: str | None = None,
+    apenas_ampliadas: bool | None = None,
+    db: Session = Depends(get_db),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
+):
+    return ConsultaService(db).listar_por_documento(doc_id, perfil, apenas_ampliadas)

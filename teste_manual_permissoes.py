@@ -9,9 +9,9 @@ from eth_account.messages import encode_defunct
 
 BASE_URL = "http://localhost:8000/api/v1"
 
-CHAVE_ADMIN = os.environ.get("ADMIN_PRIVATE_KEY")
+CHAVE_ADMIN = os.environ.get("CHAVE_PRIVADA_ADMIN")
 if not CHAVE_ADMIN:
-    print("Defina a variavel de ambiente ADMIN_PRIVATE_KEY antes de rodar (mesma chave do CHAVE_PRIVADA_ADMIN).")
+    print("Defina a variavel de ambiente CHAVE_PRIVADA_ADMIN antes de rodar (mesma chave do CHAVE_PRIVADA_ADMIN).")
     sys.exit(1)
 
 PERFIL_POLICIA_FEDERAL = 2  # espelha o enum Perfil do ControleAcesso.sol
