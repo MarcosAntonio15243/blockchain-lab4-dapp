@@ -11,6 +11,11 @@ from backend.api.dados_sensiveis import router as dados_sensiveis_router
 from backend.api.validacao_publica import router as validacao_publica_router
 
 from fastapi.middleware.cors import CORSMiddleware
+from backend.database import Base, engine
+# Os módulos de rota acima já importam (via services) os models de
+# dados_sensiveis e permissao_leitura, então suas tabelas já estão
+# registradas em Base.metadata neste ponto.
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
