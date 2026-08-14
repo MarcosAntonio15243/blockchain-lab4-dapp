@@ -21,7 +21,7 @@ blockchain-lab4-dapp/
 │   └── requirements.txt          # Dependências Python
 ├── contracts/
 │   └── ControleAcesso.sol        # Smart Contract em Solidity
-├── setup.sh                      # Script de build, deploy e geração do .env
+├── deploy-contratos.sh            # Script de build, deploy e geração do .env
 └── README.md
 ```
 
@@ -74,8 +74,8 @@ Na raiz do projeto, crie e ative seu venv:
 Execute o script automatizado para compilar o contrato em Solidity, copiar a ABI gerada e gravar o endereço implantado no .env:
 
 
-    chmod +x setup.sh
-    ./setup.sh
+    chmod +x deploy-contratos.sh
+    ./deploy-contratos.sh
 
 ### C. Iniciar a API FastAPI
 
@@ -83,6 +83,8 @@ Com a Anvil rodando e o .env atualizado pelo script, inicie a API:
 
 
     fastapi dev backend/main.py
+
+> O comando `fastapi dev` depende do `fastapi-cli`, já incluído via `fastapi[standard]` em `backend/requirements.txt`.
 
 ## 🧪 3. Testando a Aplicação
 
