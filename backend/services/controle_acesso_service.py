@@ -37,7 +37,7 @@ class ControleAcessoService:
         comprovante = self.w3.eth.wait_for_transaction_receipt(transacao_hash)
 
         instituicao = Instituicao(
-            endereco=conta_alvo,
+            endereco=conta_alvo.lower(),
             nome=nome,
             cadastrado_por=cadastrado_por,
         )
