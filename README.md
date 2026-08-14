@@ -96,3 +96,7 @@ Abra o navegador e acesse a documentação interativa do Swagger UI:
 
     GET /acessos/consultar-perfil/{conta}: Consulta na Blockchain o perfil registrado para o endereço fornecido.
 
+## 🙏 Agradecimentos
+
+Agradecemos à nossa cliente **Ana Talita Ferreira Marinho** ([ana.talita@tjpb.jus.br](mailto:ana.talita@tjpb.jus.br)) por validar a aplicação.
+
