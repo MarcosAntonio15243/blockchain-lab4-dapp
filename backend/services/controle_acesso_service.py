@@ -18,7 +18,7 @@ class ControleAcessoService:
         )
 
 
-    def definir_perfil(self, conta_alvo: str, perfil_enum: int, nome: str) -> str:
+    def definir_perfil(self, conta_alvo: str, perfil_enum: int, nome: str, cadastrado_por: str) -> str:
         conta_checksum = Web3.to_checksum_address(conta_alvo)
         nonce = self.w3.eth.get_transaction_count(self.conta_admin)
 
@@ -36,20 +36,16 @@ class ControleAcessoService:
         transacao_hash = self.w3.eth.send_raw_transaction(transacao_assinada.raw_transaction)
         comprovante = self.w3.eth.wait_for_transaction_receipt(transacao_hash)
 
-        self.db.add(instituicao)
-        self.db.commit()
-        self.db.refresh(instituicao)
-
-        existente = self.db.query(Instituicao).filter(Instituicao.endereco == conta_alvo).first()
-        if existente is not None:
-            raise ValueError("ja existe um registro de instituicao para este endereco")
-
         instituicao = Instituicao(
             endereco=conta_alvo,
             nome=nome,
-            cadastrado_por=cadastrado_por.lower(),
+            cadastrado_por=cadastrado_por,
         )
 
+        self.db.add(instituicao)
+        self.db.commit()
+        self.db.refresh(instituicao)
+        
         return comprovante.transactionHash.hex()
 
     # Consulta o nome da instituição e quem a registrou

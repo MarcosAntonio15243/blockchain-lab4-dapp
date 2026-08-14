@@ -5,6 +5,9 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from web3 import Web3
+from sqlalchemy.orm import Session
+
+from backend.database import get_db
 
 from backend.config import settings
 from backend.schemas.registrar_documento import (
@@ -59,7 +62,9 @@ def get_registro_documentos_service() -> RegistrarDocumentoService:
     )
 
 
-def get_controle_acesso_service() -> ControleAcessoService:
+def get_controle_acesso_service(
+    db: Session = Depends(get_db)
+) -> ControleAcessoService:
     if not w3_provider.is_connected():
         raise HTTPException(status_code=503, detail="Blockchain indisponível.")
     return ControleAcessoService(
@@ -67,6 +72,7 @@ def get_controle_acesso_service() -> ControleAcessoService:
         contract_address=settings.ENDERECO_CONTROLE_ACESSO,
         abi=CONTROLE_ACESSO_ABI,
         private_key=settings.CHAVE_PRIVADA_ADMIN,
+        db=db
     )
 
 

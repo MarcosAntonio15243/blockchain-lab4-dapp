@@ -67,7 +67,7 @@ print("✅ Admin autenticado.\n")
 print("1) Atribuindo perfil PoliciaFederal a conta de teste...")
 resposta = requests.post(
     f"{BASE_URL}/acessos/definir-perfil",
-    json={"conta": policia_federal.address, "perfil": PERFIL_POLICIA_FEDERAL},
+    json={"conta": policia_federal.address, "perfil": PERFIL_POLICIA_FEDERAL, "nome": "Polícia Federal - PB"},
     headers=cabecalho(token_admin),
 )
 print(f"   status={resposta.status_code} corpo={resposta.json()}")
