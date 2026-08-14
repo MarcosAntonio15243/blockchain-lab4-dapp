@@ -2,7 +2,11 @@ import json
 from web3 import Web3
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
+from backend.database import get_db
+
+from backend.api.registrar_documento import exigir_perfil_vara
 from backend.config import settings
 from backend.schemas.controle_acesso import DefinirPerfilSchema, DefinirPerfilResponse, ConsultarPerfilResponse
 from backend.services.controle_acesso_service import ControleAcessoService
@@ -19,10 +23,10 @@ with open(ABI_PATH, "r") as f:
 
 w3_provider = Web3(Web3.HTTPProvider(settings.BLOCKCHAIN_RPC_URL))
 
-PERFIL_ADMINISTRADOR = 1  # equivalente a Perfil.Vara no enum do contrato
 
-
-def get_controle_acesso_service() -> ControleAcessoService:
+def get_controle_acesso_service(
+    db: Session = Depends(get_db)
+) -> ControleAcessoService:
     if not w3_provider.is_connected():
         raise HTTPException(status_code=503, detail="Blockchain indisponível.")
     return ControleAcessoService(
@@ -30,31 +34,19 @@ def get_controle_acesso_service() -> ControleAcessoService:
         contract_address=settings.ENDERECO_CONTROLE_ACESSO,
         abi=CONTROLE_ACESSO_ABI,
         private_key=settings.CHAVE_PRIVADA_ADMIN,
+        db=db
     )
-
-
-def exigir_perfil_administrador(
-    endereco: str = Depends(obter_endereco_autenticado),
-    service: ControleAcessoService = Depends(get_controle_acesso_service),
-) -> str:
-    """
-    So libera a acao se o endereco autenticado (via assinatura de carteira)
-    realmente possuir o perfil de administrador/Vara on-chain.
-    """
-    perfil_atual = service.consultar_perfil(endereco)
-    if perfil_atual != PERFIL_ADMINISTRADOR:
-        raise HTTPException(status_code=403, detail="perfil nao autorizado para esta acao")
-    return endereco
 
 
 @router.post("/definir-perfil", response_model=DefinirPerfilResponse)
 def definir_perfil(
     requisicao: DefinirPerfilSchema,
     service: ControleAcessoService = Depends(get_controle_acesso_service),
-    endereco_autenticado: str = Depends(exigir_perfil_administrador),  # <- protecao adicionada
+    endereco_autenticado: str = Depends(exigir_perfil_vara),  # <- protecao adicionada
 ):
     try:
-        hash_tx = service.definir_perfil(requisicao.conta, requisicao.perfil)
+        hash_tx = service.definir_perfil(requisicao.conta, requisicao.perfil, requisicao.nome, endereco_autenticado)
+
         return DefinirPerfilResponse(
             sucesso=True,
             hash_transacao=hash_tx,
@@ -68,7 +60,7 @@ def definir_perfil(
 def consultar_perfil(
     conta: str,
     service: ControleAcessoService = Depends(get_controle_acesso_service),
-    endereco_autenticado: str = Depends(obter_endereco_autenticado),  # so exige login, qualquer perfil
+    endereco_autenticado: str = Depends(obter_endereco_autenticado),
 ):
     """
     Consulta qual o perfil atual de um endereço.

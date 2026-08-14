@@ -1,11 +1,13 @@
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from eth_account.messages import encode_defunct
 from eth_account import Account
 from jose import jwt, JWTError
-from fastapi import HTTPException, Header
+from fastapi import Depends, HTTPException, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from backend.config import settings
 
@@ -60,14 +62,12 @@ def criar_token_sessao(endereco: str) -> str:
     payload = {"sub": endereco.lower(), "exp": expira_em}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=ALGORITHM)
 
-
-def obter_endereco_autenticado(authorization: str = Header(...)) -> str:
-    """Dependency: extrai e valida o JWT do header 'Authorization: Bearer <token>'."""
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="token ausente ou mal formatado")
-
-    token = authorization.removeprefix("Bearer ").strip()
-
+esquema_bearer = HTTPBearer()
+esquema_bearer_opcional = HTTPBearer(auto_error=False)
+def obter_endereco_autenticado(
+    credenciais: HTTPAuthorizationCredentials = Depends(esquema_bearer),
+) -> str:
+    token = credenciais.credentials
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
         endereco: str = payload.get("sub")
@@ -76,3 +76,14 @@ def obter_endereco_autenticado(authorization: str = Header(...)) -> str:
         return endereco
     except JWTError:
         raise HTTPException(status_code=401, detail="token invalido ou expirado")
+
+def obter_endereco_opcional(authorization: Optional[HTTPAuthorizationCredentials] = Depends(esquema_bearer_opcional)) -> Optional[str]:
+    if authorization is None:
+        return None
+    try:
+        payload = jwt.decode(
+            authorization.credentials, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM]
+        )
+        return payload.get("sub")
+    except JWTError:
+        return None

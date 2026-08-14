@@ -3,6 +3,9 @@ set -e
 
 ENV_FILE=backend/.env
 
+echo "[PRE] Limpando contratos antigos"
+forge clean
+
 echo "[1/4] Compilando contratos Solidity..."
 forge build
 
@@ -10,6 +13,7 @@ echo "[2/4] Copiando ABI compilada para o Backend..."
 mkdir -p backend/abi
 cp out/ControleAcesso.sol/ControleAcesso.json backend/abi/ControleAcesso.json
 cp out/RegistroDocumentos.sol/RegistroDocumentos.json backend/abi/RegistroDocumentos.json
+
 
 echo "[3/4] Realizando Deploy no nó Anvil local..."
 CHAVE_ADMIN=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80

@@ -1,15 +1,15 @@
 import os
 import sys
-
+import hashlib
 import requests
 from eth_account import Account
 from eth_account.messages import encode_defunct
 
 BASE_URL = "http://localhost:8000/api/v1"
 
-CHAVE_ADMIN = os.environ.get("ADMIN_PRIVATE_KEY")
+CHAVE_ADMIN = os.environ.get("CHAVE_PRIVADA_ADMIN")
 if not CHAVE_ADMIN:
-    print("Defina ADMIN_PRIVATE_KEY antes de rodar.")
+    print("Defina CHAVE_PRIVADA_ADMIN antes de rodar.")
     sys.exit(1)
 
 admin = Account.from_key(CHAVE_ADMIN)
@@ -41,12 +41,20 @@ def cabecalho(token: str) -> dict:
 print("Autenticando como Vara (admin)...")
 token = logar(admin)
 print("✅ Autenticado.\n")
+CAMINHO_PDF_TESTE = "documento_exemplo.pdf"
+if not os.path.exists(CAMINHO_PDF_TESTE):
+    print(f"   {CAMINHO_PDF_TESTE} não encontrado, gerando um PDF mínimo de teste...")
+    with open(CAMINHO_PDF_TESTE, "wb") as arquivo_novo:
+        arquivo_novo.write(b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>")
+with open(CAMINHO_PDF_TESTE, "rb") as f:
+    HASH_DOC = "0x" + hashlib.sha256(f.read()).hexdigest()
+print(f"Hash real do PDF: {HASH_DOC}\n")
 
 print("1) Registrando alvará de viagem on-chain...")
 resposta = requests.post(
     f"{BASE_URL}/documentos",
     json={
-        "hashDocumento": "0x" + "cc" * 32,
+        "hashDocumento": HASH_DOC,
         "tipoDocumento": "Alvará de Autorização de Viagem",
         "orgaoEmissor": "2ª Vara da Infância e Juventude de Campina Grande",
         "autoridadeSignataria": "Dra. Maria Exemplo, Juíza de Direito",
@@ -79,11 +87,6 @@ print(f"   status={resposta.status_code} corpo={resposta.json()}\n")
 resposta.raise_for_status()
 
 print("3) Gerando/lendo PDF de teste e anexando ao documento...")
-CAMINHO_PDF_TESTE = "documento_exemplo.pdf"
-if not os.path.exists(CAMINHO_PDF_TESTE):
-    print(f"   {CAMINHO_PDF_TESTE} não encontrado, gerando um PDF mínimo de teste...")
-    with open(CAMINHO_PDF_TESTE, "wb") as arquivo_novo:
-        arquivo_novo.write(b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>")
 
 with open(CAMINHO_PDF_TESTE, "rb") as arquivo_pdf:
     resposta = requests.post(
@@ -105,7 +108,7 @@ print(f"   PDF salvo em baixado.pdf ({len(resposta.content)} bytes)")
 print("\n5) Consultando a rota PÚBLICA de validação (sem autenticação, como no QR Code)...")
 url_validacao = f"{BASE_URL}/validacao/{doc_id}"
 resposta = requests.get(url_validacao, timeout=10)  # nota: sem headers de auth, de proposito
-print(f"   status={resposta.status_code}")
+print(f"   status={resposta.status_code}")  
 resposta.raise_for_status()
 dados_publicos = resposta.json()
 for chave, valor in dados_publicos.items():
@@ -120,3 +123,19 @@ print("=" * 70)
 # Salva num arquivo para a pagina HTML usar
 with open("doc_id_teste.txt", "w") as f:
     f.write(doc_id)
+
+print("\n6) Consultando a MESMA rota autenticado como Vara...")
+resposta = requests.get(url_validacao, headers=cabecalho(token), timeout=10)
+for chave, valor in resposta.json().items():
+    print(f"   {chave}: {valor}")
+
+print("\n7) Conferindo integridade do PDF correto...")
+with open(CAMINHO_PDF_TESTE, "rb") as f:
+    r = requests.post(f"{BASE_URL}/validacao/{doc_id}/conferir-integridade",
+                      files={"arquivo": ("alvara.pdf", f, "application/pdf")}, timeout=10)
+print("  ", r.json())
+
+print("\n8) Conferindo um PDF ADULTERADO (deve dar integro=False)...")
+r = requests.post(f"{BASE_URL}/validacao/{doc_id}/conferir-integridade",
+                  files={"arquivo": ("falso.pdf", b"%PDF-1.4 adulterado", "application/pdf")}, timeout=10)
+print("  ", r.json())

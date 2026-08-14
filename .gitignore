@@ -6,3 +6,7 @@ cache/
 .env
 __pycache__/
 .deps/
+banco.db
+baixado.pdf
+doc_id_teste.txt
+banco.db

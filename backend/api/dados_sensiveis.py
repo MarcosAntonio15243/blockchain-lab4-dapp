@@ -5,22 +5,11 @@ import io
 
 from backend.database import get_db
 from backend.services.dados_sensiveis_service import DadosSensiveisService
-from backend.services.permissao_leitura_service import PermissaoLeituraService
-from backend.services.controle_acesso_service import ControleAcessoService
 from backend.schemas.dados_sensiveis import CadastrarDadosSensiveisInput, DadosSensiveisResponse
-from backend.schemas.registrar_documento import PerfilOnChain, MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE
 from backend.api.registrar_documento import exigir_perfil_vara
-from backend.api.controle_acesso import get_controle_acesso_service
-from backend.auth.security import obter_endereco_autenticado
-
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
-from fastapi.responses import StreamingResponse
-import io
-
-
 
 router = APIRouter(prefix="/documentos", tags=["Dados Sensíveis"])
+
 
 @router.post("/{doc_id}/dados-sensiveis", response_model=DadosSensiveisResponse)
 def cadastrar_dados_sensiveis(
@@ -48,6 +37,7 @@ def cadastrar_dados_sensiveis(
 
 TIPOS_PERMITIDOS = {"application/pdf"}
 TAMANHO_MAXIMO_BYTES = 10 * 1024 * 1024  # 10 MB
+
 
 @router.post("/{doc_id}/arquivo")
 async def anexar_arquivo(
@@ -85,27 +75,13 @@ async def anexar_arquivo(
 def baixar_arquivo(
     doc_id: str,
     db: Session = Depends(get_db),
-    controle_acesso: ControleAcessoService = Depends(get_controle_acesso_service),
-    endereco_autenticado: str = Depends(obter_endereco_autenticado),
+    endereco_autenticado: str = Depends(exigir_perfil_vara),
 ):
+    service = DadosSensiveisService(db)
     try:
-        perfil_onchain = controle_acesso.consultar_perfil(endereco_autenticado)
-
-        if perfil_onchain != PerfilOnChain.VARA:
-            perfil_consulente = MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE.get(perfil_onchain)
-            permissao_service = PermissaoLeituraService(db)
-            pode_ler = permissao_service.pode_ler(doc_id, endereco_autenticado, perfil_consulente)
-            if not pode_ler:
-                raise HTTPException(status_code=403, detail="sem permissao para acessar este arquivo")
-
-        service = DadosSensiveisService(db)
         conteudo, nome_original, content_type = service.obter_arquivo(doc_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado para este documento.")
-    except HTTPException:
-        raise
-    except Exception as erro:
-        raise HTTPException(status_code=400, detail=str(erro))
 
     return StreamingResponse(
         io.BytesIO(conteudo),

@@ -10,18 +10,40 @@ class PerfilOnChain(IntEnum):
     VARA = 1
     POLICIA_FEDERAL = 2
     COMPANHIA_AEREA = 3
-    CONSELHO_TUTELAR = 4
-
+    COMPANHIA_RODOVIARIA = 4
+    CARTORIO = 5
+    CONSELHO_TUTELAR = 6
+    CASA_ACOLHIMENTO = 7
+    ESCOLA = 8
+    HOSPITAL = 9
+    MINISTERIO_PUBLICO = 10
+    DEFENSORIA_PUBLICA = 11
+    OUTRO_ORGAO_PUBLICO = 12
 
 class PerfilConsulente(str, Enum):
     POLICIA_FEDERAL = "PoliciaFederal"
     COMPANHIA_AEREA = "CompanhiaAerea"
+    COMPANHIA_RODOVIARIA = "CompanhiaRodoviaria"
+    CARTORIO = "Cartorio"
     CONSELHO_TUTELAR = "ConselhoTutelar"
+    CASA_ACOLHIMENTO = "CasaAcolhimento"
+    ESCOLA = "Escola"
+    HOSPITAL = "Hospital"
+    MINISTERIO_PUBLICO = "MinisterioPublico"
+    DEFENSORIA_PUBLICA = "DefensoriaPublica"
+
 
 MAPA_PERFIL_ONCHAIN_PARA_CONSULENTE: dict[PerfilOnChain, PerfilConsulente] = {
     PerfilOnChain.POLICIA_FEDERAL: PerfilConsulente.POLICIA_FEDERAL,
     PerfilOnChain.COMPANHIA_AEREA: PerfilConsulente.COMPANHIA_AEREA,
+    PerfilOnChain.COMPANHIA_RODOVIARIA: PerfilConsulente.COMPANHIA_RODOVIARIA,
+    PerfilOnChain.CARTORIO: PerfilConsulente.CARTORIO,
     PerfilOnChain.CONSELHO_TUTELAR: PerfilConsulente.CONSELHO_TUTELAR,
+    PerfilOnChain.CASA_ACOLHIMENTO: PerfilConsulente.CASA_ACOLHIMENTO,
+    PerfilOnChain.ESCOLA: PerfilConsulente.ESCOLA,
+    PerfilOnChain.HOSPITAL: PerfilConsulente.HOSPITAL,
+    PerfilOnChain.MINISTERIO_PUBLICO: PerfilConsulente.MINISTERIO_PUBLICO,
+    PerfilOnChain.DEFENSORIA_PUBLICA: PerfilConsulente.DEFENSORIA_PUBLICA
 }
 
 class DocumentoInput(BaseModel):
