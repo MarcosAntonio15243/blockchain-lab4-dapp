@@ -8,7 +8,15 @@ contract ControleAcesso {
         Vara,
         PoliciaFederal,
         CompanhiaAerea,
-        ConselhoTutelar
+        CompanhiaRodoviaria,
+        Cartorio,
+        ConselhoTutelar,
+        CasaAcolhimento,
+        Escola,
+        Hospital,
+        MinisterioPublico,
+        DefensoriaPublica,
+        OutroOrgaoPublico
     }
 
     // Endereco que pode administrar os perfis.
