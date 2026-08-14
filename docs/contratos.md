@@ -36,6 +36,7 @@ classDiagram
         +uint256 validoAte
         +StatusDocumento status
         +bytes32 substituidoPor
+        +uint256 statusAtualizadoEm
         +bool existe
     }
 
@@ -53,10 +54,18 @@ classDiagram
         Vara
         PoliciaFederal
         CompanhiaAerea
+        CompanhiaRodoviaria
+        Cartorio
         ConselhoTutelar
+        CasaAcolhimento
+        Escola
+        Hospital
+        MinisterioPublico
+        DefensoriaPublica
+        OutroOrgaoPublico
     }
 
-    RegistroDocumentos --> ControleAcesso : consulta perfis
+    RegistroDocumentos --> ControleAcesso : referencia (checagem de perfil e permissao de leitura ocorre no backend)
     RegistroDocumentos *-- Documento : armazena
     Documento --> StatusDocumento : possui
     ControleAcesso --> Perfil : atribui

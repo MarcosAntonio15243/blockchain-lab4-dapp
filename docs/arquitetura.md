@@ -17,7 +17,8 @@ flowchart TB
 
     subgraph OFF["Off-chain - infraestrutura do Tribunal"]
         PJE["PJe / SEI<br/>(processo sigiloso)"]
-        BFF["Backend VerificaJus<br/>calcula hash do PDF<br/>gera docId aleatorio<br/>aplica perfis de acesso"]
+        AUTH["Autenticacao<br/>assinatura de carteira (JWT)"]
+        BFF["Backend VerificaJus<br/>calcula hash do PDF<br/>gera docId aleatorio<br/>aplica perfis e permissoes de leitura"]
         DB[("Base segura<br/>dados pessoais<br/>docId x processo")]
         QR["Gerador de QR Code<br/>link dinamico"]
         VAL["Pagina publica<br/>de validacao seletiva"]
@@ -31,11 +32,14 @@ flowchart TB
 
     MAG --> PAINEL
     SERV --> PAINEL
+    PAINEL -->|"assina desafio com a carteira"| AUTH
+    AUTH -->|"token JWT"| BFF
     PJE -->|"PDF assinado"| BFF
-    PAINEL -->|"solicita registro ou mudanca de status"| BFF
+    PAINEL -->|"solicita registro, mudanca de status ou permissao de leitura"| BFF
     BFF -->|"dados pessoais e vinculos sigilosos"| DB
     BFF -->|"docId, hash, tipo, validade e orgao emissor"| RD
     BFF -->|"define ou consulta perfil"| CA
+    BFF -->|"concede ou revoga permissao de leitura por documento"| DB
     BFF --> QR
     QR -->|"URL com docId"| VAL
 
@@ -53,18 +57,20 @@ flowchart TB
     classDef off fill:#f6f8fa,stroke:#6a737d,color:#24292e
     classDef ext fill:#fff8e1,stroke:#c28b00,color:#3b2f00
     class RD,CA chain
-    class PJE,BFF,DB,QR,VAL,PAINEL off
+    class PJE,AUTH,BFF,DB,QR,VAL,PAINEL off
     class PF,CIA,CT,MAG,SERV ext
 ```
 
 ## Fluxo principal
 
-1. A Vara expede um alvara de viagem ou termo de guarda no PJe/SEI.
-2. O backend recebe o PDF assinado, calcula o hash, gera um `docId` aleatorio e grava os dados sigilosos na base segura do Tribunal.
-3. O contrato `RegistroDocumentos` registra na blockchain apenas `docId`, hash, tipo, validade, orgao emissor e status inicial.
-4. A aplicacao gera um QR Code dinamico apontando para a pagina de validacao.
-5. O consulente externo acessa a pagina, que consulta a blockchain para confirmar existencia e status do documento.
-6. A pagina consulta a base off-chain e exibe somente os campos permitidos para o perfil institucional do consulente.
+1. O magistrado ou servidor autoriza-se no painel assinando um desafio com a carteira; o backend valida a assinatura e emite um token JWT.
+2. A Vara expede um alvara de viagem ou termo de guarda no PJe/SEI.
+3. O backend recebe o PDF assinado, calcula o hash, gera um `docId` aleatorio e grava os dados sigilosos na base segura do Tribunal.
+4. O contrato `RegistroDocumentos` registra na blockchain apenas `docId`, hash, tipo, validade, orgao emissor e status inicial.
+5. A aplicacao gera um QR Code dinamico apontando para a pagina de validacao.
+6. Alem do perfil institucional, a Vara pode conceder ou revogar permissao de leitura para um consulente especifico em um documento especifico.
+7. O consulente externo acessa a pagina, que consulta a blockchain para confirmar existencia e status do documento.
+8. A pagina consulta a base off-chain e exibe somente os campos permitidos pelo perfil institucional e pelas permissoes de leitura concedidas ao consulente.
 
 ## Fronteira de dados
 
