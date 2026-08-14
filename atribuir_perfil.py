@@ -3,12 +3,18 @@ Atribui um perfil institucional a uma conta na blockchain, sem precisar
 montar chamadas HTTP manuais nem ficar catando token de sessão no navegador.
 
 Uso:
-    venv/bin/python3 atribuir_perfil.py <endereco_da_conta> <perfil>
+    venv/bin/python3 atribuir_perfil.py <endereco_da_conta> <perfil> <nome_da_instituicao>
 
-<perfil> pode ser: Vara, PoliciaFederal, CompanhiaAerea, ConselhoTutelar
+<perfil> pode ser: Vara, PoliciaFederal, CompanhiaAerea, CompanhiaRodoviaria,
+Cartorio, ConselhoTutelar, CasaAcolhimento, Escola, Hospital,
+MinisterioPublico, DefensoriaPublica, OutroOrgaoPublico
+
+<nome_da_instituicao> é o nome real por trás do endereço (ex: "Policia
+Federal - Superintendencia PB"), exigido pelo backend para fins de
+auditoria — não controla permissão nenhuma, isso continua sendo por perfil.
 
 Exemplo:
-    venv/bin/python3 atribuir_perfil.py 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 PoliciaFederal
+    venv/bin/python3 atribuir_perfil.py 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 PoliciaFederal "Policia Federal - Superintendencia PB"
 
 Faz login como a conta administradora (a mesma que implanta os contratos,
 CHAVE_PRIVADA_ADMIN em backend/.env, que já nasce com perfil Vara) e chama
@@ -32,7 +38,15 @@ PERFIL_POR_NOME = {
     "vara": 1,
     "policiafederal": 2,
     "companhiaaerea": 3,
-    "conselhotutelar": 4,
+    "companhiarodoviaria": 4,
+    "cartorio": 5,
+    "conselhotutelar": 6,
+    "casaacolhimento": 7,
+    "escola": 8,
+    "hospital": 9,
+    "ministeriopublico": 10,
+    "defensoriapublica": 11,
+    "outroorgaopublico": 12,
 }
 
 
@@ -61,12 +75,13 @@ def logar_como_admin() -> str:
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print(__doc__)
         raise SystemExit(1)
 
     endereco_alvo = sys.argv[1]
     nome_perfil = sys.argv[2]
+    nome_instituicao = sys.argv[3]
     perfil_numero = PERFIL_POR_NOME.get(nome_perfil.lower())
     if perfil_numero is None:
         print(f"Perfil desconhecido: {nome_perfil!r}. Use um de: {list(PERFIL_POR_NOME)}")
@@ -77,7 +92,7 @@ def main() -> None:
     resposta = requests.post(
         f"{BASE}/acessos/definir-perfil",
         headers={"Authorization": f"Bearer {token}"},
-        json={"conta": endereco_alvo, "perfil": perfil_numero},
+        json={"conta": endereco_alvo, "perfil": perfil_numero, "nome": nome_instituicao},
     )
 
     if resposta.status_code != 200:
