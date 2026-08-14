@@ -2,6 +2,8 @@
 
 API REST desenvolvida em **FastAPI** para gerenciamento de perfis de acesso integrados a um Smart Contract na Blockchain Ethereum local (**Anvil**) via **Web3.py**.
 
+🔗 Repositório do frontend: [blockchain-lab4-dapp-frontend](https://github.com/MarcosAntonio15243/blockchain-lab4-dapp-frontend)
+
 ---
 
 ## 🏗️ Arquitetura do Projeto
